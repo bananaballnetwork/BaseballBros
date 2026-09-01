@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Banana Ball Bros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="shortcut icon" type="image/png" href="./assets1/favicon.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+    }
+    #openfl-content {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    #loading {
+      position: absolute;
+      z-index: 15;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, 0);
+      background: #000;
+    }
+  </style>
+
+  <!-- Firebase is kept local so the game has the same browser-side APIs as the original. -->
+  <script src="./vendor/firebase-app.js"></script>
+  <script src="./vendor/firebase-auth.js"></script>
+  <script src="./vendor/firebase-firestore.js"></script>
+
+  <script>
+    /* Local/offline-safe replacements for site services that are not needed to render the game. */
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {}
+
+    function SendEvent() {
+      console.log("SendEvent disabled in local build.");
+    }
+
+    function updateStatus() {}
+
+    var userData = "";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBuzj8XEP-5kOFFhyuxylQ6P0B2G_ogsM",
+      authDomain: "baseball-bros-8dd7f.firebaseapp.com",
+      projectId: "baseball-bros-8dd7f",
+      storageBucket: "baseball-bros-8dd7f.firebasestorage.app",
+      messagingSenderId: "618024516218",
+      appId: "1:618024516218:web:11efff2d4b092aefaf99c3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    function isUserLoggedIn() {
+      return auth.currentUser !== null;
+    }
+
+    function triggerSignIn() {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    }
+
+    function saveGameData(gameData) {
+      if (!auth.currentUser) {
+        userData = gameData;
+        return;
+      }
+      userData = gameData;
+      db.collection('users').doc(auth.currentUser.uid).set({
+        gameData: gameData
+      }).catch(function(error) {
+        console.error("Error saving game data:", error);
+      });
+    }
+
+    function loadGameData() {
+      return userData;
+    }
+
+    function loadGameDataAsync() {
+      if (!auth.currentUser) return;
+      db.collection('users').doc(auth.currentUser.uid).get().then(function(doc) {
+        if (doc.exists) {
+          userData = doc.data().gameData;
+          if (typeof Main !== "undefined" && Main.LoadDataComplete) {
+            Main.LoadDataComplete();
+          }
+        }
+      }).catch(function(error) {
+        console.error("Error loading game data:", error);
+      });
+    }
+
+    auth.onAuthStateChanged(function(user) {
+      if (user) {
+        loadGameDataAsync();
+        SendEvent('event', 'sign_in');
+      } else {
+        SendEvent('event', 'sign_out');
+      }
+    });
+
+    function signOut() {
+      auth.signOut().then(function() {
+        if (typeof Main !== "undefined" && Main.SignOutComplete) {
+          Main.SignOutComplete();
+        }
+      });
+    }
+
+    /* Ads/video are disabled in this local build. */
+    function LoadVideo() {}
+    function SetupMSNotification() {}
+    function ShowVideo() {
+      if (typeof Main !== "undefined" && Main.DoneVideoAd) Main.DoneVideoAd(true);
+    }
+    function ShowAd1() {}
+    function ShowAd2() {}
+    function ShowAd3() {}
+    function ShowAd4() {}
+    function ShowAd6() {}
+    function ShowAd7() {}
+    function ShowAd8() {}
+  </script>
+
+  <script src="./BaseballBros.js"></script>
+</head>
+
+<body>
+  <noscript>Enable JavaScript to play Banana Ball Bros!</noscript>
+
+  <div id="loading">
+    <center>
+      <img src="./assets2/loading4.png"><br>
+      <img src="./assets1/fbro.png">
+      <img src="./assets1/bbbro.png">
+      <img src="./assets2/sbro.png">
+      <img src="./assets2/wbro.png">
+      <img src="./assets2/kbro.png">
+      <img src="./assets1/bbro.png">
+    </center>
+  </div>
+
+  <div id="openfl-content" tabindex="-1" onblur="window.focus();">
+    <script>
+      lime.embed("BaseballBros", "openfl-content", 0, 0, { parameters: {} });
+    </script>
+  </div>
+
+  <script>
+    /* Hide the loading screen once the game canvas exists. */
+    var loading = document.getElementById("loading");
+    var observer = new MutationObserver(function() {
+      var canvas = document.querySelector("#openfl-content canvas");
+      if (canvas) {
+        loading.style.display = "none";
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.getElementById("openfl-content"), {childList:true, subtree:true});
+  </script>
+</body>
+</html>
